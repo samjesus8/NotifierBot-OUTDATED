@@ -96,7 +96,7 @@ namespace YouTubeBot
 
         private static async Task StartYouTubeNotifier(DiscordClient client, ulong channelIdToNotify)
         {
-            var timer = new Timer(18000000); //Set to 18000000 for 30 min
+            var timer = new Timer(1800000);
 
             timer.Elapsed += async (sender, e) => {
 
