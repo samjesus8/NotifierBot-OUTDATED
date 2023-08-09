@@ -14,14 +14,16 @@ namespace YouTubeBot
     public sealed class Program
     {
         //Discord Properties
-        public static DiscordClient Client { get; private set; }
-        public static CommandsNextExtension Commands { get; private set; }
+        private static DiscordClient Client { get; set; }
+        private static CommandsNextExtension Commands { get; set; }
 
         //YouTube Properties
         private static YouTubeVideo _video = new YouTubeVideo();
         private static YouTubeVideo temp = new YouTubeVideo();
         private static YouTubeEngine _YouTubeEngine = new YouTubeEngine();
+
         public static bool everyoneMention = false;
+        public static ulong channelID = 745837589767913472;
         static async Task Main(string[] args)
         {
             //1. Get the details of your config.json file by deserialising it
@@ -63,7 +65,7 @@ namespace YouTubeBot
             await Client.ConnectAsync(SetActivity(), UserStatus.Online);
 
             //9. Start the YouTube notification service
-            await StartYouTubeNotifier(Client, 1017524740610592808);
+            await StartYouTubeNotifier(Client, channelID);
 
             await Task.Delay(-1);
         }
@@ -94,7 +96,7 @@ namespace YouTubeBot
 
         private static async Task StartYouTubeNotifier(DiscordClient client, ulong channelIdToNotify)
         {
-            var timer = new Timer(10000); //Set to 18000000 for 30 min
+            var timer = new Timer(18000000); //Set to 18000000 for 30 min
 
             timer.Elapsed += async (sender, e) => {
 
@@ -109,26 +111,33 @@ namespace YouTubeBot
                     }
                     else if (_video.PublishedAt < lastCheckedAt) //If the new video is actually new
                     {
-                        string message = string.Empty;
-                        if (everyoneMention == true)
+                        try
                         {
-                            message = "(@everyone) \n" +
-                                      "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
-                                      $"Title: **{_video.videoTitle}** \n" +
-                                      $"Published at: **{_video.PublishedAt}** \n" +
-                                      $"URL: {_video.videoUrl}";
-                        }
-                        else
-                        {
-                            message = "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
-                                      $"Title: **{_video.videoTitle}** \n" +
-                                      $"Published at: **{_video.PublishedAt}** \n" +
-                                      $"URL: {_video.videoUrl}";
-                        }
+                            string message = string.Empty;
+                            if (everyoneMention == true)
+                            {
+                                message = "(@everyone) \n" +
+                                          "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
+                                          $"Title: **{_video.videoTitle}** \n" +
+                                          $"Published at: **{_video.PublishedAt}** \n" +
+                                          $"URL: {_video.videoUrl}";
+                            }
+                            else
+                            {
+                                message = "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
+                                          $"Title: **{_video.videoTitle}** \n" +
+                                          $"Published at: **{_video.PublishedAt}** \n" +
+                                          $"URL: {_video.videoUrl}";
+                            }
 
 
-                        await client.GetChannelAsync(channelIdToNotify).Result.SendMessageAsync(message);
-                        temp = _video;
+                            await client.GetChannelAsync(channelIdToNotify).Result.SendMessageAsync(message);
+                            temp = _video;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[{lastCheckedAt}] YouTube API: An error occured \n {ex}");
+                        }
                     }
                     else //NO new videos were found here
                     {
