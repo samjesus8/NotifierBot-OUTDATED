@@ -68,7 +68,7 @@ namespace YouTubeBot
             await Client.ConnectAsync();
 
             //9. Start the YouTube notification service
-            await StartYouTubeNotifier(Client, 123456789); //INSERT VALID CHANNEL ID, OR IMPLEMENT A CHANNEL SYSTEM
+            await StartYouTubeNotifier(Client, 1017524740610592808); //INSERT VALID CHANNEL ID, OR IMPLEMENT A CHANNEL SYSTEM
 
             await Task.Delay(-1);
         }
@@ -80,7 +80,7 @@ namespace YouTubeBot
 
         private static async Task StartYouTubeNotifier(DiscordClient client, ulong channelIdToNotify)
         {
-            var timer = new Timer(120000); //Timer set for 2 min
+            var timer = new Timer(10000); //Set to 18000000 for 30 min
 
             timer.Elapsed += async (sender, e) => {
 
@@ -91,20 +91,22 @@ namespace YouTubeBot
                 {
                     if (temp.videoTitle == _video.videoTitle) //This ensures that only the newest videos get sent through
                     {
-                        Console.WriteLine("Same name");
+                        Console.WriteLine($"[{lastCheckedAt}] YouTube API: No new videos were found");
                     }
                     else if (_video.PublishedAt < lastCheckedAt) //If the new video is actually new
                     {
-                        var message = $"NEW VIDEO | **{_video.videoTitle}** \n" +
-                                      $"Published at: {_video.PublishedAt} \n" +
-                                      "URL: " + _video.videoUrl;
+                        var message = "(@everyone) \n" +
+                                      "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
+                                      $"Title: **{_video.videoTitle}** \n" +
+                                      $"Published at: **{_video.PublishedAt}** \n" +
+                                      $"URL: {_video.videoUrl}";
 
                         await client.GetChannelAsync(channelIdToNotify).Result.SendMessageAsync(message);
                         temp = _video;
                     }
                     else //NO new videos were found here
                     {
-                        Console.WriteLine("[" + lastCheckedAt.ToString() + "]" + "YouTube API: No new videos were found");
+                        Console.WriteLine($"[{lastCheckedAt}] YouTube API: No new videos were found");
                     }
                 }
             };
