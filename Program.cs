@@ -1,8 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using DSharpPlus.Interactivity;
-using DSharpPlus.Interactivity.Extensions;
 using System;
 using System.Threading.Tasks;
 using System.Timers;
@@ -22,6 +21,7 @@ namespace YouTubeBot
         private static YouTubeVideo _video = new YouTubeVideo();
         private static YouTubeVideo temp = new YouTubeVideo();
         private static YouTubeEngine _YouTubeEngine = new YouTubeEngine();
+        public static bool everyoneMention = false;
         static async Task Main(string[] args)
         {
             //1. Get the details of your config.json file by deserialising it
@@ -40,14 +40,9 @@ namespace YouTubeBot
             //3. Apply this config to our DiscordClient
             Client = new DiscordClient(discordConfig);
 
-            //4. Set the default timeout for Commands that use interactivity
-            Client.UseInteractivity(new InteractivityConfiguration()
-            {
-                Timeout = TimeSpan.FromMinutes(2)
-            });
-
             //5. Set up the Task Handler Ready event
-            Client.Ready += OnClientReady;
+            Client.Ready += Client_Ready;
+            Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
 
             //6. Set up the Commands Configuration
             var commandsConfig = new CommandsNextConfiguration()
@@ -65,15 +60,34 @@ namespace YouTubeBot
             Commands.RegisterCommands<Basic>();
 
             //8. Connect to get the Bot online
-            await Client.ConnectAsync();
+            await Client.ConnectAsync(SetActivity(), UserStatus.Online);
 
             //9. Start the YouTube notification service
-            await StartYouTubeNotifier(Client, 1017524740610592808); //INSERT VALID CHANNEL ID, OR IMPLEMENT A CHANNEL SYSTEM
+            await StartYouTubeNotifier(Client, 1017524740610592808);
 
             await Task.Delay(-1);
         }
 
-        private static Task OnClientReady(DiscordClient sender, ReadyEventArgs e)
+        private static async Task Client_ComponentInteractionCreated(DiscordClient sender, ComponentInteractionCreateEventArgs e)
+        {
+            switch (e.Interaction.Data.CustomId)
+            {
+                case "everyoneButton":
+                    if (everyoneMention == true)
+                    {
+                        everyoneMention = false;
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Disabled everyone mention"));
+                    }
+                    else
+                    {
+                        everyoneMention = true;
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Enabled everyone mention"));
+                    }
+                    break;
+            }
+        }
+
+        private static Task Client_Ready(DiscordClient sender, ReadyEventArgs e)
         {
             return Task.CompletedTask;
         }
@@ -95,11 +109,23 @@ namespace YouTubeBot
                     }
                     else if (_video.PublishedAt < lastCheckedAt) //If the new video is actually new
                     {
-                        var message = "(@everyone) \n" +
+                        string message = string.Empty;
+                        if (everyoneMention == true)
+                        {
+                            message = "(@everyone) \n" +
                                       "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
                                       $"Title: **{_video.videoTitle}** \n" +
                                       $"Published at: **{_video.PublishedAt}** \n" +
                                       $"URL: {_video.videoUrl}";
+                        }
+                        else
+                        {
+                            message = "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
+                                      $"Title: **{_video.videoTitle}** \n" +
+                                      $"Published at: **{_video.PublishedAt}** \n" +
+                                      $"URL: {_video.videoUrl}";
+                        }
+
 
                         await client.GetChannelAsync(channelIdToNotify).Result.SendMessageAsync(message);
                         temp = _video;
@@ -111,6 +137,16 @@ namespace YouTubeBot
                 }
             };
             timer.Start();
+        }
+
+        private static DiscordActivity SetActivity()
+        {
+            var activity = new DiscordActivity
+            {
+                Name = "~subscribe"
+            };
+
+            return activity;
         }
     }
 }
