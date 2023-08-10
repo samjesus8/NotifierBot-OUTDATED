@@ -23,7 +23,8 @@ namespace YouTubeBot
         private static YouTubeEngine _YouTubeEngine = new YouTubeEngine();
 
         public static bool everyoneMention = false;
-        public static ulong channelID = 745837589767913472;
+        public static bool notifications = false;
+        public static ulong channelID = 745837589767913472; //Default = 745837589767913472
         static async Task Main(string[] args)
         {
             //1. Get the details of your config.json file by deserialising it
@@ -58,7 +59,6 @@ namespace YouTubeBot
             Commands = Client.UseCommandsNext(commandsConfig);
 
             //7. Register your commands
-
             Commands.RegisterCommands<Basic>();
 
             //8. Connect to get the Bot online
@@ -79,11 +79,28 @@ namespace YouTubeBot
                     {
                         everyoneMention = false;
                         await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Disabled everyone mention"));
+                        await Log("```everyoneMention = false```");
                     }
                     else
                     {
                         everyoneMention = true;
                         await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Enabled everyone mention"));
+                        await Log("```everyoneMention = true```");
+                    }
+                    break;
+
+                case "notifierButton":
+                    if (notifications == true)
+                    {
+                        notifications = false;
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Disabled Notifications"));
+                        await Log("```notifications = false```");
+                    }
+                    else
+                    {
+                        notifications = true;
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Enabled Notifications"));
+                        await Log("```notifications = true```");
                     }
                     break;
             }
@@ -96,7 +113,7 @@ namespace YouTubeBot
 
         private static async Task StartYouTubeNotifier(DiscordClient client, ulong channelIdToNotify)
         {
-            var timer = new Timer(1800000);
+            var timer = new Timer(1800000); //Default = 1800000, Testing = 10000
 
             timer.Elapsed += async (sender, e) => {
 
@@ -108,43 +125,50 @@ namespace YouTubeBot
                     if (temp.videoTitle == _video.videoTitle) //This ensures that only the newest videos get sent through
                     {
                         Console.WriteLine($"[{lastCheckedAt}] YouTube API: No new videos were found");
+                        await Log($"```[{lastCheckedAt}] YouTube API: No new videos were found```");
                     }
                     else if (_video.PublishedAt < lastCheckedAt) //If the new video is actually new
                     {
-                        try
+                        if (notifications == true) //Notifications is enabled
                         {
-                            string message = string.Empty;
-                            if (everyoneMention == true)
+                            try
                             {
-                                message = "(@everyone) \n" +
-                                          "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
-                                          $"Title: **{_video.videoTitle}** \n" +
-                                          $"Published at: **{_video.PublishedAt}** \n" +
-                                          $"URL: {_video.videoUrl}";
-                            }
-                            else
-                            {
-                                message = "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
-                                          $"Title: **{_video.videoTitle}** \n" +
-                                          $"Published at: **{_video.PublishedAt}** \n" +
-                                          $"URL: {_video.videoUrl}";
-                            }
+                                string message = string.Empty;
+                                if (everyoneMention == true)
+                                {
+                                    message = "(@everyone) \n" +
+                                              "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
+                                              $"Title: **{_video.videoTitle}** \n" +
+                                              $"Published at: **{_video.PublishedAt}** \n" +
+                                              $"URL: {_video.videoUrl}";
+                                }
+                                else
+                                {
+                                    message = "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
+                                              $"Title: **{_video.videoTitle}** \n" +
+                                              $"Published at: **{_video.PublishedAt}** \n" +
+                                              $"URL: {_video.videoUrl}";
+                                }
 
 
-                            await client.GetChannelAsync(channelIdToNotify).Result.SendMessageAsync(message);
-                            temp = _video;
+                                await client.GetChannelAsync(channelIdToNotify).Result.SendMessageAsync(message);
+                                temp = _video;
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[{lastCheckedAt}] YouTube API: An error occured \n {ex}");
+                                await Log($"```[{lastCheckedAt}] YouTube API: An error occured``` \n {ex}");
+                            }
                         }
-                        catch (Exception ex)
+                        else //Notifications is disabled, do not send any messages
                         {
-                            Console.WriteLine($"[{lastCheckedAt}] YouTube API: An error occured \n {ex}");
+                            Console.WriteLine($"[{DateTime.Now}] YouTube API: Notifications is not enabled, notifier did not run");
+                            await Log($"[{DateTime.Now}] YouTube API: Notifications is not enabled, notifier did not run");
                         }
-                    }
-                    else //NO new videos were found here
-                    {
-                        Console.WriteLine($"[{lastCheckedAt}] YouTube API: No new videos were found");
                     }
                 }
             };
+
             timer.Start();
         }
 
@@ -156,6 +180,21 @@ namespace YouTubeBot
             };
 
             return activity;
+        }
+
+        private static async Task Log(string message)
+        {
+            var commandCentre = await Client.GetGuildAsync(1138978680165638225);
+            var logChannel = commandCentre.GetChannel(1138979284283830372);
+
+            var log = new DiscordMessageBuilder()
+                .AddEmbed(new DiscordEmbedBuilder()
+                    .WithColor(DiscordColor.Black)
+                    .WithTitle("samjesus8 Notification System")
+                    .WithDescription(message)
+                    .WithFooter(DateTime.Now.ToString()));
+
+            await logChannel.SendMessageAsync(log);
         }
     }
 }

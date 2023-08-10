@@ -1,4 +1,5 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using System.Threading.Tasks;
@@ -25,14 +26,16 @@ namespace YouTubeBot.Commands
         {
             if (ctx.User.Id == 572877986223751188)
             {
-                var everyoneButton = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "everyoneButton", "1");
+                var everyoneButton = new DiscordButtonComponent(ButtonStyle.Primary, "everyoneButton", "1");
+                var notifierButton = new DiscordButtonComponent(ButtonStyle.Primary, "notifierButton", "2");
 
                 var settingsMenu = new DiscordMessageBuilder()
                     .AddEmbed(new DiscordEmbedBuilder()
                         .WithColor(DiscordColor.Black)
                         .WithTitle("Bot Settings")
-                    .AddField("@everyone Mention", Program.everyoneMention.ToString()))
-                    .AddComponents(everyoneButton);
+                    .AddField("@everyone Mention", Program.everyoneMention.ToString(), true)
+                    .AddField("Notifications", Program.notifications.ToString(), true))
+                    .AddComponents(everyoneButton, notifierButton);
 
                 await ctx.Channel.SendMessageAsync(settingsMenu);
             }
