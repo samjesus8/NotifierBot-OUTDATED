@@ -8,16 +8,10 @@ namespace YouTubeBot.YouTube
     {
         //TO GET THE API KEY, USE GOOGLE CLOUD CONSOLE
         private readonly string channelId = "UCMt7ZwKIAoE3tIDudviqUSA";
-        private readonly string apiKey = "AIzaSyDYTxDyFBdDZXIMno2H5H-MHDpxTMB-KcQ";
+        private readonly string apiKey = "AIzaSyDhcgQlQ52RfhusRL4Et1wiJfwJSo61Iko";
 
         public YouTubeVideo GetLatestVideo()
         {
-            // Temporary variables for Video info
-            string videoId;
-            string videoUrl;
-            string videoTitle;
-            DateTime? videoPublishedAt;
-
             // Initializing the API
             var youtubeService = new YouTubeService(new BaseClientService.Initializer()
             {
@@ -47,19 +41,15 @@ namespace YouTubeBot.YouTube
 
                     if (!IsShortVideo(videoDuration)) // Exclude YouTube Shorts
                     {
-                        videoId = searchResult.Id.VideoId; // Setting our details
-                        videoUrl = $"https://www.youtube.com/watch?v={videoId}";
-                        videoTitle = searchResult.Snippet.Title;
-                        videoPublishedAt = searchResult.Snippet.PublishedAt;
-                        var thumbnail = searchResult.Snippet.Thumbnails.Default__.Url;
+                        var videoId = searchResult.Id.VideoId;
 
                         return new YouTubeVideo() // Storing in a class for use in the bot
                         {
-                            videoId = videoId,
-                            videoUrl = videoUrl,
-                            videoTitle = videoTitle,
-                            thumbnail = thumbnail,
-                            PublishedAt = videoPublishedAt
+                            videoId = searchResult.Id.VideoId,
+                            videoUrl = $"https://www.youtube.com/watch?v={videoId}",
+                            videoTitle = searchResult.Snippet.Title,
+                            thumbnail = searchResult.Snippet.Thumbnails.Default__.Url,
+                            PublishedAt = searchResult.Snippet.PublishedAtDateTimeOffset
                         };
                     }
 
@@ -78,14 +68,36 @@ namespace YouTubeBot.YouTube
         {
             if (duration.StartsWith("PT") && duration.EndsWith("S"))
             {
-                var secondsPart = duration.Substring(2, duration.Length - 3); // Extract seconds part
-                if (int.TryParse(secondsPart, out int seconds))
-                {
-                    // Define a threshold for what can be considered a YouTube Short (e.g., videos less than 2 minutes)
-                    const int ShortThresholdSeconds = 60;
+                // Extract minutes and seconds parts
+                string minutesPart = "";
+                string secondsPart = "";
 
-                    return seconds < ShortThresholdSeconds;
+                if (duration.Contains("M"))
+                {
+                    minutesPart = duration.Substring(2, duration.IndexOf("M") - 2); // Extract minutes part
                 }
+
+                if (duration.Contains("S"))
+                {
+                    secondsPart = duration.Substring(duration.IndexOf("M") + 1, duration.Length - (duration.IndexOf("M") + 2)); // Extract seconds part
+                }
+
+                int totalSeconds = 0;
+
+                if (!string.IsNullOrEmpty(minutesPart))
+                {
+                    totalSeconds += int.Parse(minutesPart) * 60; // Convert minutes to seconds
+                }
+
+                if (!string.IsNullOrEmpty(secondsPart))
+                {
+                    totalSeconds += int.Parse(secondsPart); // Add seconds
+                }
+
+                // Define a threshold for what can be considered a YouTube Short (e.g., videos less than 2 minutes)
+                const int ShortThresholdSeconds = 65;
+
+                return totalSeconds < ShortThresholdSeconds;
             }
 
             return false;

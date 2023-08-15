@@ -18,13 +18,12 @@ namespace YouTubeBot
         private static CommandsNextExtension Commands { get; set; }
 
         //YouTube Properties
-        private static YouTubeVideo _video = new YouTubeVideo();
-        private static YouTubeVideo temp = new YouTubeVideo();
+        private static YouTubeVideo lastRetrievedVideo = new YouTubeVideo();
         private static YouTubeEngine _YouTubeEngine = new YouTubeEngine();
 
         public static bool everyoneMention = false;
-        public static bool notifications = false;
-        public static ulong channelID = 745837589767913472; //Default = 745837589767913472
+        public static bool notifications = true;
+        public static ulong channelID = 1017524740610592808; //Default = 745837589767913472, Testing = 1017524740610592808
         static async Task Main(string[] args)
         {
             //1. Get the details of your config.json file by deserialising it
@@ -113,59 +112,54 @@ namespace YouTubeBot
 
         private static async Task StartYouTubeNotifier(DiscordClient client, ulong channelIdToNotify)
         {
-            var timer = new Timer(1800000); //Default = 1800000, Testing = 10000
+            var timer = new Timer(10000); //Default = 1800000, Testing = 10000
+            DateTime lastCheckedAt = DateTime.MinValue;
 
-            timer.Elapsed += async (sender, e) => {
-
-                _video = _YouTubeEngine.GetLatestVideo(); //Get latest video using API
-                DateTime lastCheckedAt = DateTime.Now;
-
-                if (_video != null)
+            timer.Elapsed += async (sender, e) =>
+            {
+                try
                 {
-                    if (temp.videoTitle == _video.videoTitle) //This ensures that only the newest videos get sent through
+                    YouTubeVideo latestVideo = _YouTubeEngine.GetLatestVideo(); // Get latest video using API
+
+                    if (latestVideo != null && latestVideo.videoId != lastRetrievedVideo.videoId && latestVideo.PublishedAt > lastCheckedAt)
                     {
-                        Console.WriteLine($"[{lastCheckedAt}] YouTube API: No new videos were found");
-                        await Log($"```[{lastCheckedAt}] YouTube API: No new videos were found```");
-                    }
-                    else if (_video.PublishedAt < lastCheckedAt) //If the new video is actually new
-                    {
-                        if (notifications == true) //Notifications is enabled
+                        lastCheckedAt = latestVideo.PublishedAt.Value.DateTime; // Update the last checked timestamp
+
+                        if (notifications)
                         {
-                            try
-                            {
-                                string message = string.Empty;
-                                if (everyoneMention == true)
-                                {
-                                    message = "(@everyone) \n" +
-                                              "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
-                                              $"Title: **{_video.videoTitle}** \n" +
-                                              $"Published at: **{_video.PublishedAt}** \n" +
-                                              $"URL: {_video.videoUrl}";
-                                }
-                                else
-                                {
-                                    message = "SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!! \n" +
-                                              $"Title: **{_video.videoTitle}** \n" +
-                                              $"Published at: **{_video.PublishedAt}** \n" +
-                                              $"URL: {_video.videoUrl}";
-                                }
+                            string message = everyoneMention
+                                ? $"(@everyone)\n" +
+                                  $"SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!!\n" +
+                                  $"Title: **{latestVideo.videoTitle}**\n" +
+                                  $"Published at: **{latestVideo.PublishedAt}**\n" +
+                                  $"URL: {latestVideo.videoUrl}"
 
+                                : $"SamJesus8 UPLOADED A NEW VIDEO, CHECK IT OUT!!!!\n" +
+                                  $"Title: **{latestVideo.videoTitle}**\n" +
+                                  $"Published at: **{latestVideo.PublishedAt}**\n" +
+                                  $"URL: {latestVideo.videoUrl}";
 
-                                await client.GetChannelAsync(channelIdToNotify).Result.SendMessageAsync(message);
-                                temp = _video;
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"[{lastCheckedAt}] YouTube API: An error occured \n {ex}");
-                                await Log($"```[{lastCheckedAt}] YouTube API: An error occured``` \n {ex}");
-                            }
+                            var channel = await client.GetChannelAsync(channelIdToNotify);
+                            await channel.SendMessageAsync(message);
+
+                            lastRetrievedVideo = latestVideo;
                         }
-                        else //Notifications is disabled, do not send any messages
+                        else
                         {
                             Console.WriteLine($"[{DateTime.Now}] YouTube API: Notifications is not enabled, notifier did not run");
                             await Log($"[{DateTime.Now}] YouTube API: Notifications is not enabled, notifier did not run");
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine($"[{DateTime.Now}] YouTube API: No new videos were found");
+                        await Log($"```[{DateTime.Now}] YouTube API: No new videos were found```");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[{DateTime.Now}] YouTube API: An error occurred \n {ex}");
+                    await Log($"```[{DateTime.Now}] YouTube API: An error occurred``` \n {ex}");
                 }
             };
 
