@@ -8,6 +8,6 @@ namespace YouTubeBot.YouTube
         public string videoUrl;
         public string videoTitle;
         public string thumbnail;
-        public DateTimeOffset? PublishedAt;
+        public DateTime? PublishedAt;
     }
 }

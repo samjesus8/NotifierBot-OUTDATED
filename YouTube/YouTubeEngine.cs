@@ -49,7 +49,7 @@ namespace YouTubeBot.YouTube
                             videoUrl = $"https://www.youtube.com/watch?v={videoId}",
                             videoTitle = searchResult.Snippet.Title,
                             thumbnail = searchResult.Snippet.Thumbnails.Default__.Url,
-                            PublishedAt = searchResult.Snippet.PublishedAtDateTimeOffset
+                            PublishedAt = searchResult.Snippet.PublishedAtDateTimeOffset.Value.DateTime
                         };
                     }
 
