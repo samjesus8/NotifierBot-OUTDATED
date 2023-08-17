@@ -23,7 +23,7 @@ namespace YouTubeBot
 
         public static bool everyoneMention = false;
         public static bool notifications = true;
-        public static ulong channelID = 1017524740610592808; //Default = 745837589767913472, Testing = 1017524740610592808
+        public static ulong channelID = 745837589767913472; //Default = 745837589767913472, Testing = 1017524740610592808
         static async Task Main(string[] args)
         {
             //1. Get the details of your config.json file by deserialising it
@@ -112,7 +112,7 @@ namespace YouTubeBot
 
         private static async Task StartYouTubeNotifier(DiscordClient client, ulong channelIdToNotify)
         {
-            var timer = new Timer(10000); //Default = 1800000, Testing = 10000
+            var timer = new Timer(1800000); //Default = 1800000, Testing = 10000
             DateTime? lastCheckedAt = DateTime.MinValue;
 
             timer.Elapsed += async (sender, e) =>
