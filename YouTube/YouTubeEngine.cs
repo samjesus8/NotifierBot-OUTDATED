@@ -7,8 +7,8 @@ namespace YouTubeBot.YouTube
     public class YouTubeEngine
     {
         //TO GET THE API KEY, USE GOOGLE CLOUD CONSOLE
-        private readonly string channelId = "UCMt7ZwKIAoE3tIDudviqUSA";
-        private readonly string apiKey = "AIzaSyDhcgQlQ52RfhusRL4Et1wiJfwJSo61Iko";
+        private readonly string channelId = "INSERT-HERE";
+        private readonly string apiKey = "INSERT-HERE";
 
         public YouTubeVideo GetLatestVideo()
         {
