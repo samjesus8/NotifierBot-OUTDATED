@@ -23,7 +23,7 @@ namespace YouTubeBot
 
         public static bool everyoneMention = false;
         public static bool notifications = true;
-        public static ulong channelID = 745837589767913472; //Default = 745837589767913472, Testing = 1017524740610592808
+        public static ulong channelID = 123456789;
         static async Task Main(string[] args)
         {
             //1. Get the details of your config.json file by deserialising it
@@ -178,8 +178,8 @@ namespace YouTubeBot
 
         private static async Task Log(string message)
         {
-            var commandCentre = await Client.GetGuildAsync(1138978680165638225);
-            var logChannel = commandCentre.GetChannel(1138979284283830372);
+            var commandCentre = await Client.GetGuildAsync(123456789);
+            var logChannel = commandCentre.GetChannel(123456789);
 
             var log = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder()
